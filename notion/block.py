@@ -7,7 +7,7 @@ class Block(Client):
         super().__init__(api_key)
         self.block_id = block_id
 
-    def get_block(self):
+    def get_block(self) -> dict:
         url = f"https://api.notion.com/v1/blocks/{self.block_id}"
 
         headers = {
@@ -19,3 +19,18 @@ class Block(Client):
         response = requests.get(url, headers=headers)
 
         return response.json()
+
+    def get_children_blocks(self) -> list:
+        url = f"https://api.notion.com/v1/blocks/{self.block_id}/children?page_size=100"
+
+        headers = {
+            "Accept": "application/json",
+            "Notion-Version": "2022-06-28",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+
+        response = requests.get(url, headers=headers)
+        arr = []
+        for result in response.json()["results"]:
+            arr.append(result)
+        return arr

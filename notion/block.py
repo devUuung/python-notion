@@ -49,3 +49,14 @@ class Block(Client):
             arr.append(result["paragraph"]["rich_text"][0]["text"]
                        ["content"] if result["paragraph"]["rich_text"] else None)
         return arr
+
+    def get_children_block_text(self, idx: int) -> str:
+        url = f"https://api.notion.com/v1/blocks/{self.block_id}/children?page_size=100"
+
+        headers = {
+            "Accept": "application/json",
+            "Notion-Version": "2022-06-28",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        response = requests.get(url, headers=headers)
+        return response.json()["results"][idx]["paragraph"]["rich_text"][0]["text"]["content"] if response.json()["results"][idx]["paragraph"]["rich_text"] else None

@@ -1,4 +1,5 @@
 import requests
+from traitlets import Bool
 
 
 class Client:
@@ -8,12 +9,17 @@ class Client:
         self.page = None
         self.block = None
 
-    def set_database(self, database_id) -> None:
+    def set_database(self, database_id) -> Bool:
         self.database = self.Database(self.api_key, database_id)
-        return "Success"
+        return True
 
-    def set_page(self, page_id) -> None:
+    def set_page(self, page_id) -> Bool:
         self.page = self.Page(self.api_key, page_id)
+        return True
+
+    def set_block(self, block_id) -> Bool:
+        self.block = self.Block(self.api_key, block_id)
+        return True
 
     class Database:
         def __init__(self, api_key, database_id) -> None:
@@ -129,3 +135,18 @@ class Client:
                 return response.json()["results"][idx]
             elif mode == "text":
                 return response.json()["results"][idx]["paragraph"]["rich_text"][0]["text"]["content"] if response.json()["results"][idx]["paragraph"]["rich_text"] else None
+
+        def delete(self):
+            url = f"https://api.notion.com/v1/blocks/{self.block_id}"
+
+            headers = {
+                "Accept": "application/json",
+                "Notion-Version": "2022-06-28",
+                "Authorization": f"Bearer {self.api_key}"
+            }
+
+            response = requests.delete(url, headers=headers)
+            if response.json()["object"] == "block":
+                return response.json()
+            elif response.json()["object"] == "error":
+                return response.json()["message"]

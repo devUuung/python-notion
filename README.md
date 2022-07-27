@@ -17,4 +17,4 @@ for element in myApp.database.get_elements_text("Attribute"):
 ```
 
 Attribute는 데이터베이스의 속성입니다. 다음 사진을 예로 들면 Name과 d가 속성입니다.
-![Attribute.png](inkdrop://file:NnFAr8_Wf)
+![Attribute.png](https://user-images.githubusercontent.com/87903147/181211395-47968388-1aa2-4ebc-b476-111e46719477.png)

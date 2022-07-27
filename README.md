@@ -2,13 +2,19 @@
 
 Notion API 써드파티 라이브러리입니다.
 
-# Todo
+### 목차
+- [사용예제](#사용예제)
 
-- [ ] create_block
-- [x] read_block
-- [ ] update_block
-- [ ] delete_block
-- [ ] create_page
-- [ ] read_page
-- [ ] update_page
-- [ ] delete_page
+### 사용예제
+```py
+from notion import Client
+
+myApp = Client("api_key")
+myApp.set_database("database_key")
+
+for element in myApp.database.get_elements_text("Attribute"):
+  print(element)
+```
+
+Attribute는 데이터베이스의 속성입니다. 다음 사진을 예로 들면 Name과 d가 속성입니다.
+![Attribute.png](inkdrop://file:NnFAr8_Wf)

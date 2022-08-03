@@ -1,5 +1,4 @@
 import requests
-from traitlets import Bool
 
 
 class Client:
@@ -9,15 +8,15 @@ class Client:
         self.page = None
         self.block = None
 
-    def set_database(self, database_id) -> Bool:
+    def set_database(self, database_id):
         self.database = self.Database(self.api_key, database_id)
         return True
 
-    def set_page(self, page_id) -> Bool:
+    def set_page(self, page_id):
         self.page = self.Page(self.api_key, page_id)
         return True
 
-    def set_block(self, block_id) -> Bool:
+    def set_block(self, block_id):
         self.block = self.Block(self.api_key, block_id)
         return True
 
@@ -68,6 +67,36 @@ class Client:
                     }
                     response = requests.patch(
                         url, json=payload, headers=headers)
+
+        def add_element(self, attributes, contents):
+            url = "https://api.notion.com/v1/pages"
+
+            properties = {}
+
+            properties[attributes[0]] = {
+                "title": [{"text": {"content": contents[0]}}]
+            }
+
+            for i in range(1, len(attributes)):
+                properties[attributes[i]] = {"rich_text": [{"text": {"content": contents[i]}}]}
+
+            payload = {
+                "parent": {
+                    "type": "database_id",
+                    "database_id": f"{self.database_id}"
+                },
+                "properties": properties
+            }
+            headers = {
+                "Accept": "application/json",
+                "Notion-Version": "2022-06-28",
+                "Content-Type": "application/json",
+                "Authorization": f"{self.api_key}"
+            }
+
+            response = requests.post(url, json=payload, headers=headers)
+
+            print(response.text)
 
     class Page:
         def __init__(self, api_key, page_id) -> None:
@@ -150,3 +179,47 @@ class Client:
                 return response.json()
             elif response.json()["object"] == "error":
                 return response.json()["message"]
+
+        def append_children_block(self):
+            url = f"https://api.notion.com/v1/blocks/{self.block_id}/children"
+
+            headers = {
+                "Accept": "application/json",
+                "Notion-Version": "2022-06-28",
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}"
+            }
+
+            payload = {
+                "object": "block",
+                "type": "heading_1",
+                "archived": False,
+                "has_children": False,
+                # ...other keys excluded
+                "heading_1": {
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {
+                                "content": "Lacinato kale",
+                                "link": None
+                            },
+                            "annotations": {
+                                "bold": False,
+                                "italic": False,
+                                "strikethrough": False,
+                                "underline": False,
+                                "code": False,
+                                "color": "green"
+                            },
+                            "plain_text": "Lacinato kale",
+                            "href": None
+                        }
+                    ],
+                    "color": "default"
+                }
+            }
+
+            response = requests.patch(url, json=payload, headers=headers)
+
+            print(response.text)

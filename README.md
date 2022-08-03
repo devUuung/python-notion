@@ -1,11 +1,14 @@
-# python-notion
-
-Notion API 써드파티 라이브러리입니다.
-
 ### 목차
+
+- [소개](#소개)
 - [사용예제](#사용예제)
 
+### 소개
+
+Notion API 써드파티 라이브러리입니다. 이 프로젝트는 Notion의 데이터베이스 기능을 다른 관계형 데이터베이스처럼 사용할 수 있도록 구현하는 것이 목적입니다.
+
 ### 사용예제
+
 ```py
 from notion import Client
 
@@ -15,6 +18,3 @@ myApp.set_database("database_key")
 for element in myApp.database.get_elements_text("Attribute"):
   print(element)
 ```
-
-Attribute는 데이터베이스의 속성입니다. 다음 사진을 예로 들면 Name과 d가 속성입니다.
-![Attribute.png](https://user-images.githubusercontent.com/87903147/181211395-47968388-1aa2-4ebc-b476-111e46719477.png)

@@ -1,67 +1,13 @@
 import requests
-
-
-class Page:
-    def __init__(self, json, attrs: dict) -> None:
-        self.id = json["id"]
-        self.attr = {}
-        for key, property in json["properties"].items():
-            if property["type"] == "rich_text":
-                self.attr[key] = {
-                    "value": property["rich_text"][0]["plain_text"] if property["rich_text"] else None,
-                    "type": attrs[key].type,
-                    "primary": attrs[key].primary,
-                    "notNone": attrs[key].notNone,
-                    "title": False,
-                    "rich_text": True
-                }
-            elif property["type"] == "title":
-                self.attr[key] = {
-                    "value": property["title"][0]["plain_text"] if property["title"] else None,
-                    "type": attrs[key].type,
-                    "primary": attrs[key].primary,
-                    "notNone": attrs[key].notNone,
-                    "title": True,
-                    "rich_text": False
-                }
-
-
-class Attribute:
-    """
-        Attribute 클래스로 만들어진 인스턴스의 네이밍은 key의 이름이어야합니다.
-    """
-
-    def __init__(self, type, **kwargs) -> None:
-        """
-        type 종류
-        1. str, string
-        2. int, integer
-        3. float
-        """
-        self.type = type
-        try:
-            if kwargs["primary"] == True:
-                self.primary = True
-                self.notNone = True
-            else:
-                self.primary = False
-                self.notNone = False
-        except KeyError:
-            self.primary = False
-            self.notNone = False
-        try:
-            if kwargs["notNone"] and kwargs["notNone"] == True:
-                self.notNone = True
-        except KeyError:
-            ...
+from .page import Page
 
 
 class Database:
-    def __init__(self, url, api, attrs: dict) -> None:
+    def __init__(self, url, api, attr) -> None:
         """
         url: 데이터베이스가 존재하는 http 주소입니다.
         api: notionAPI key 입니다.
-        attrs: Attribute 클래스 인스턴스들의 딕셔너리 묶음입니다.
+        attr: Attribute 클래스 인스턴스들의 딕셔너리 묶음입니다.
         """
         headers = {
             "Accept": "application/json",
@@ -78,20 +24,38 @@ class Database:
         self.title = res["title"]
         self.properties = res["properties"]
         self.api = api
-        self.attrs = attrs
+        self.attr = attr
 
-    # insert할때 타입이 일치하는지 확인하는 기능 추가해야함.
     def insert(self, attributes, contents):
         url = "https://api.notion.com/v1/pages"
         properties = {}
-
-        properties[attributes[0]] = {
-            "title": [{"text": {"content": contents[0]}}]
-        }
-
-        for i in range(1, len(attributes)):
-            properties[attributes[i]] = {"rich_text": [
-                {"text": {"content": contents[i]}}]}
+        is_primary = False
+        for i, attribute in enumerate(attributes):
+            if self.attr[attribute].primary:
+                if is_primary:
+                    return False
+                is_primary = True
+                if self.attr[attribute].type.is_valid(contents[i]):
+                    properties[attribute] = {
+                        "title": [{
+                            "text": {
+                                "content": str(contents[i])
+                            }
+                        }]
+                    }
+                else:
+                    return False
+            else:
+                if self.attr[attribute].type.is_valid(contents[i]) is True:
+                    properties[attribute] = {
+                        "rich_text": [{
+                            "text": {
+                                "content": str(contents[i])
+                            }
+                        }]
+                    }
+                else:
+                    return False
 
         payload = {
             "parent": {
@@ -126,7 +90,7 @@ class Database:
         res = requests.post(url, json=payload, headers=headers).json()
         arr = []
         for result in res["results"]:
-            arr.append(Page(result, self.attrs))
+            arr.append(Page(result, self.attr))
         return tuple(arr)
 
     def update(self, key, before_content, after_content) -> bool:

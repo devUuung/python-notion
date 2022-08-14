@@ -3,7 +3,25 @@ from .page import Page
 
 
 class Database:
-    def __init__(self, url, api, attr) -> None:
+    class IntField:
+        def __init__(self, *, pk=False, null=True) -> None:
+            self.pk = pk
+            self.null = null
+            self.type = None
+
+        def set_type(self, type):
+            self.type = type
+
+    class CharField:
+        def __init__(self, *, pk=False, null=True) -> None:
+            self.pk = pk
+            self.null = null
+            self.type = None
+
+        def set_type(self, type):
+            self.type = type
+
+    def __init__(self, url, api, **attributes) -> None:
         """
         url: 데이터베이스가 존재하는 http 주소입니다.
         api: notionAPI key 입니다.
@@ -14,6 +32,7 @@ class Database:
             "Notion-Version": "2022-06-28",
             "Authorization": f"Bearer {api}"
         }
+
         res = requests.get(
             "https://api.notion.com/v1/databases/" +
             url.split("/")[-1].split("?")[0],
@@ -24,38 +43,56 @@ class Database:
         self.title = res["title"]
         self.properties = res["properties"]
         self.api = api
-        self.attr = attr
+        self.attributes = attributes
 
-    def insert(self, attributes, contents):
+        for key, field in attributes.items():
+            if self.properties[key]["type"] == "title":
+                field.set_type("title")
+            elif self.properties[key]["type"] == "rich_text":
+                field.set_type("rich_text")
+            else:
+                raise Exception("유효하지 않는 타입입니다.")
+
+    def checkType(self, field, content):
+        match field.__class__:
+            case Database.IntField:
+                try:
+                    int(content)
+                except ValueError:
+                    raise Exception(f"{content}는 int타입이 아닙니다.")
+                else:
+                    return
+            case Database.CharField:
+                return
+
+    # 타입이 title, rich_text에 따라서 content 반환하는 함수
+    def getProperty(self, isTitle, content):
+        if isTitle:
+            return {
+                "title": [{
+                    "text": {
+                        "content": str(content)
+                    }
+                }]
+            }
+        else:
+            return {
+                "rich_text": [{
+                    "text": {
+                        "content": str(content)
+                    }
+                }]
+            }
+
+    def insert(self, **contents):
         url = "https://api.notion.com/v1/pages"
         properties = {}
-        is_primary = False
-        for i, attribute in enumerate(attributes):
-            if self.attr[attribute].primary:
-                if is_primary:
-                    return False
-                is_primary = True
-                if self.attr[attribute].type.is_valid(contents[i]):
-                    properties[attribute] = {
-                        "title": [{
-                            "text": {
-                                "content": str(contents[i])
-                            }
-                        }]
-                    }
-                else:
-                    return False
-            else:
-                if self.attr[attribute].type.is_valid(contents[i]) is True:
-                    properties[attribute] = {
-                        "rich_text": [{
-                            "text": {
-                                "content": str(contents[i])
-                            }
-                        }]
-                    }
-                else:
-                    return False
+        # attributeValue는 Field class입니다.
+        for attributeKey, attributeValue in self.attributes.items():
+            isTitle = True if attributeValue.type == "title" else False
+            self.checkType(attributeValue, contents[attributeKey])
+            properties[attributeKey] = self.getProperty(
+                isTitle, contents[attributeKey])
 
         payload = {
             "parent": {
@@ -72,6 +109,26 @@ class Database:
         }
         res = requests.post(url, json=payload, headers=headers)
         return res.json()
+
+    def convertContent(self, contentType, content):
+        match contentType:
+            case Database.IntField:
+                return int(content)
+            case Database.CharField:
+                return content
+
+    def getValue(self, type, contentType, property):
+        match type:
+            case "title":
+                if property["title"]:
+                    return self.convertContent(contentType, property["title"][0]["plain_text"])
+                else:
+                    return None
+            case "rich_text":
+                if property["rich_text"]:
+                    return self.convertContent(contentType, property["rich_text"][0]["plain_text"])
+                else:
+                    return None
 
     def read(self) -> tuple[Page]:
         """
@@ -90,14 +147,21 @@ class Database:
         res = requests.post(url, json=payload, headers=headers).json()
         arr = []
         for result in res["results"]:
-            arr.append(Page(result, self.attr))
+            __dict = {}
+            print("result = ", result)
+            for propertyKey, propertyValue in result["properties"].items():
+                __dict[propertyKey] = self.getValue(
+                    self.attributes[propertyKey].type, self.attributes[propertyKey].__class__, propertyValue)
+            print("arr = ", arr)
+            arr.append(__dict)
         return tuple(arr)
 
     def update(self, key, before_content, after_content) -> bool:
         for result in self.read():
-            if result.attr[key]["value"] == before_content:
+            if result[key] == before_content:
                 url = f"https://api.notion.com/v1/pages/{result.id}"
                 properties = {}
+
                 payload = {
                     "parent": {
                         "type": "database_id",
@@ -105,6 +169,7 @@ class Database:
                     },
                     "properties": properties
                 }
+
                 headers = {
                     "Accept": "application/json",
                     "Notion-Version": "2022-06-28",

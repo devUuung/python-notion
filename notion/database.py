@@ -110,23 +110,34 @@ class Database:
         res = requests.post(url, json=payload, headers=headers)
         return res.json()
 
-    def convertContent(self, contentType, content):
+    def convertContentType(self, contentType, content):
         match contentType:
             case Database.IntField:
                 return int(content)
             case Database.CharField:
                 return content
 
-    def getValue(self, type, contentType, property):
+    def getValue(self, type, contentType, property, all=False):
         match type:
             case "title":
                 if property["title"]:
-                    return self.convertContent(contentType, property["title"][0]["plain_text"])
+                    if all:
+                        return {
+                            "content": self.convertContentType(
+                                contentType, property["title"][0]["plain_text"]),
+                            "type": "title"
+                        }
+                    return self.convertContentType(contentType, property["title"][0]["plain_text"])
                 else:
                     return None
             case "rich_text":
                 if property["rich_text"]:
-                    return self.convertContent(contentType, property["rich_text"][0]["plain_text"])
+                    if all:
+                        return {
+                            "content": self.convertContentType(contentType, property["rich_text"][0]["plain_text"]),
+                            "type": "rich_text"
+                        }
+                    return self.convertContentType(contentType, property["rich_text"][0]["plain_text"])
                 else:
                     return None
 
@@ -148,18 +159,39 @@ class Database:
         arr = []
         for result in res["results"]:
             __dict = {}
-            print("result = ", result)
             for propertyKey, propertyValue in result["properties"].items():
                 __dict[propertyKey] = self.getValue(
                     self.attributes[propertyKey].type, self.attributes[propertyKey].__class__, propertyValue)
-            print("arr = ", arr)
             arr.append(__dict)
         return tuple(arr)
 
+    def readAll(self):
+        url = f"https://api.notion.com/v1/databases/{self.id}/query"
+        payload = {"page_size": 100}
+        headers = {
+            "Accept": "application/json",
+            "Notion-Version": "2021-08-16",
+            "Content-Type": "application/json",
+            "Authorization": f"{self.api}"
+        }
+        res = requests.post(url, json=payload, headers=headers).json()
+        arr = []
+        for result in res["results"]:
+            __dict = {}
+            __dict["id"] = result["id"]
+            for propertyKey, propertyValue in result["properties"].items():
+                __dict[propertyKey] = self.getValue(
+                    self.attributes[propertyKey].type, self.attributes[propertyKey].__class__, propertyValue, all=True)
+            arr.append(__dict)
+        return tuple(arr)
+
+    # 하나의 키로 하나의 값만 바꿀 수 있는 상태
+    # 여러값을 변경할 수 있게 만들어야 함
     def update(self, key, before_content, after_content) -> bool:
-        for result in self.read():
-            if result[key] == before_content:
-                url = f"https://api.notion.com/v1/pages/{result.id}"
+
+        for result in self.readAll():
+            if result[key]["content"] == before_content:
+                url = f"https://api.notion.com/v1/pages/{result['id']}"
                 properties = {}
 
                 payload = {
@@ -176,10 +208,10 @@ class Database:
                     "Content-Type": "application/json",
                     "Authorization": f"{self.api}"
                 }
-                if result.attr[key]["title"]:
+                if result[key]["type"] == "title":
                     properties[key] = {
                         "title": [{"text": {"content": after_content}}]}
-                elif result.attr[key]["rich_text"]:
+                elif result[key]["type"] == "rich_text":
                     properties[key] = {
                         "rich_text": [{"text": {"content": after_content}}]}
                 res = requests.patch(url, json=payload, headers=headers).json()
@@ -189,9 +221,10 @@ class Database:
         """
         key의 값이 content인 요소를 삭제합니다.
         """
-        for result in self.read():
-            if result.attr[key]["value"] == content:
-                url = f"https://api.notion.com/v1/pages/{result.id}"
+        for result in self.readAll():
+            # key를 잘못 입력한 경우 예외처리 해야함
+            if result[key]["content"] == content:
+                url = f"https://api.notion.com/v1/pages/{result['id']}"
                 payload = {"archived": True}
                 headers = {
                     "Accept": "application/json",

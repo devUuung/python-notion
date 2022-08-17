@@ -1,5 +1,4 @@
 import requests
-from .page import Page
 
 
 class Database:
@@ -141,7 +140,7 @@ class Database:
                 else:
                     return None
 
-    def read(self) -> tuple[Page]:
+    def read(self) -> tuple:
         """
         Page 클래스 튜플을 반환합니다.
         1. id
@@ -185,9 +184,8 @@ class Database:
             arr.append(__dict)
         return tuple(arr)
 
-    # 하나의 키로 하나의 값만 바꿀 수 있는 상태
-    # 여러값을 변경할 수 있게 만들어야 함
-    def update(self, key, before_content, after_content) -> bool:
+    # 버그가 있는지 확인해야함.
+    def update(self, key, before_content, **after_content) -> bool:
 
         for result in self.readAll():
             if result[key]["content"] == before_content:
@@ -208,12 +206,13 @@ class Database:
                     "Content-Type": "application/json",
                     "Authorization": f"{self.api}"
                 }
-                if result[key]["type"] == "title":
-                    properties[key] = {
-                        "title": [{"text": {"content": after_content}}]}
-                elif result[key]["type"] == "rich_text":
-                    properties[key] = {
-                        "rich_text": [{"text": {"content": after_content}}]}
+                for contentKey, contentValue in after_content.items():
+                    if result[contentKey]["type"] == "title":
+                        properties[contentKey] = {
+                            "title": [{"text": {"content": contentValue}}]}
+                    elif result[contentKey]["type"] == "rich_text":
+                        properties[contentKey] = {
+                            "rich_text": [{"text": {"content": contentValue}}]}
                 res = requests.patch(url, json=payload, headers=headers).json()
         return True if res else False
 

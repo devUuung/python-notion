@@ -20,6 +20,15 @@ class Database:
         def set_type(self, type):
             self.type = type
 
+    class FloatField:
+        def __init__(self, *, pk=False, null=True) -> None:
+            self.pk = pk
+            self.null = null
+            self.type = None
+
+        def set_type(self, type):
+            self.type = type
+
     def __init__(self, url, api, **attributes) -> None:
         """
         url: 데이터베이스가 존재하는 http 주소입니다.
@@ -63,6 +72,13 @@ class Database:
                     return
             case Database.CharField:
                 return
+            case Database.FloatField:
+                try:
+                    float(content)
+                except ValueError:
+                    raise Exception(f"{content}는 float타입이 아닙니다.")
+                else:
+                    return
 
     # 타입이 title, rich_text에 따라서 content 반환하는 함수
     def getProperty(self, isTitle, content):

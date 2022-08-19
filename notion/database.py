@@ -1,4 +1,3 @@
-from logging import exception
 import requests
 
 
@@ -39,21 +38,28 @@ class Database:
         api: notionAPI key 입니다.
         attr: Attribute 클래스 인스턴스들의 딕셔너리 묶음입니다.
         """
-        headers = {
+        self.headers22 = {
             "Accept": "application/json",
             "Notion-Version": "2022-06-28",
             "Authorization": f"Bearer {api}"
         }
 
-        res = requests.get(
+        self.headers21 = {
+            "Accept": "application/json",
+            "Notion-Version": "2021-08-16",
+            "Content-Type": "application/json",
+            "Authorization": f"{api}"
+        }
+
+        response = requests.get(
             "https://api.notion.com/v1/databases/" +
             url.split("/")[-1].split("?")[0],
-            headers=headers
+            headers=self.headers22
         ).json()
 
-        self.id = res["id"]
-        self.title = res["title"]
-        self.properties = res["properties"]
+        self.id = response["id"]
+        self.title = response["title"]
+        self.properties = response["properties"]
         self.api = api
         self.attributes = attributes
 
@@ -120,14 +126,9 @@ class Database:
             },
             "properties": properties
         }
-        headers = {
-            "Accept": "application/json",
-            "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json",
-            "Authorization": f"{self.api}"
-        }
-        res = requests.post(url, json=payload, headers=headers)
-        return res.json()
+        if requests.post(url, json=payload, headers=self.headers22):
+            return True
+        return False
 
     def convertContentType(self, contentType, content):
         match contentType:
@@ -163,13 +164,7 @@ class Database:
     def read(self) -> tuple:
         url = f"https://api.notion.com/v1/databases/{self.id}/query"
         payload = {"page_size": 100}
-        headers = {
-            "Accept": "application/json",
-            "Notion-Version": "2021-08-16",
-            "Content-Type": "application/json",
-            "Authorization": f"{self.api}"
-        }
-        res = requests.post(url, json=payload, headers=headers).json()
+        res = requests.post(url, json=payload, headers=self.headers21).json()
         arr = []
         for result in res["results"]:
             __dict = {}
@@ -182,13 +177,7 @@ class Database:
     def readAll(self):
         url = f"https://api.notion.com/v1/databases/{self.id}/query"
         payload = {"page_size": 100}
-        headers = {
-            "Accept": "application/json",
-            "Notion-Version": "2021-08-16",
-            "Content-Type": "application/json",
-            "Authorization": f"{self.api}"
-        }
-        res = requests.post(url, json=payload, headers=headers).json()
+        res = requests.post(url, json=payload, headers=self.headers21).json()
         arr = []
         for result in res["results"]:
             __dict = {}
@@ -213,13 +202,6 @@ class Database:
                     },
                     "properties": properties
                 }
-
-                headers = {
-                    "Accept": "application/json",
-                    "Notion-Version": "2022-06-28",
-                    "Content-Type": "application/json",
-                    "Authorization": f"{self.api}"
-                }
                 for contentKey, contentValue in after_content.items():
                     if result[contentKey]["type"] == "title":
                         properties[contentKey] = {
@@ -227,13 +209,10 @@ class Database:
                     elif result[contentKey]["type"] == "rich_text":
                         properties[contentKey] = {
                             "rich_text": [{"text": {"content": contentValue}}]}
-                res = requests.patch(url, json=payload, headers=headers).json()
-        try:
-            print(res)
-        except UnboundLocalError:
-            raise Exception("정상작동하지 않았습니다.")
-        else:
-            return
+                if requests.patch(url, json=payload, headers=self.headers22).json():
+                    return True
+
+        return False
 
     def delete(self, key, content) -> bool:
         for result in self.readAll():
@@ -241,12 +220,6 @@ class Database:
             if result[key]["content"] == content:
                 url = f"https://api.notion.com/v1/pages/{result['id']}"
                 payload = {"archived": True}
-                headers = {
-                    "Accept": "application/json",
-                    "Notion-Version": "2022-06-28",
-                    "Content-Type": "application/json",
-                    "Authorization": f"{self.api}"
-                }
-                res = requests.patch(
-                    url, json=payload, headers=headers).json()
-        return True if res else False
+                if requests.patch(url, json=payload, headers=self.headers22).json():
+                    return True
+        return False

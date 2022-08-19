@@ -1,8 +1,9 @@
+from logging import exception
 import requests
 
 
 class Database:
-    class IntField:
+    class Field:
         def __init__(self, *, pk=False, null=True) -> None:
             self.pk = pk
             self.null = null
@@ -11,23 +12,26 @@ class Database:
         def set_type(self, type):
             self.type = type
 
-    class CharField:
+    class IntField(Field):
         def __init__(self, *, pk=False, null=True) -> None:
-            self.pk = pk
-            self.null = null
-            self.type = None
+            super().__init__(pk=pk, null=null)
 
         def set_type(self, type):
-            self.type = type
+            return super().set_type(type)
 
-    class FloatField:
+    class CharField(Field):
         def __init__(self, *, pk=False, null=True) -> None:
-            self.pk = pk
-            self.null = null
-            self.type = None
+            super().__init__(pk=pk, null=null)
 
         def set_type(self, type):
-            self.type = type
+            return super().set_type(type)
+
+    class FloatField(Field):
+        def __init__(self, *, pk=False, null=True) -> None:
+            super().__init__(pk=pk, null=null)
+
+        def set_type(self, type):
+            return super().set_type(type)
 
     def __init__(self, url, api, **attributes) -> None:
         """
@@ -157,11 +161,6 @@ class Database:
                     return None
 
     def read(self) -> tuple:
-        """
-        Page 클래스 튜플을 반환합니다.
-        1. id
-        2. attr
-        """
         url = f"https://api.notion.com/v1/databases/{self.id}/query"
         payload = {"page_size": 100}
         headers = {
@@ -200,7 +199,6 @@ class Database:
             arr.append(__dict)
         return tuple(arr)
 
-    # 버그가 있는지 확인해야함.
     def update(self, key, before_content, **after_content) -> bool:
 
         for result in self.readAll():
@@ -230,12 +228,14 @@ class Database:
                         properties[contentKey] = {
                             "rich_text": [{"text": {"content": contentValue}}]}
                 res = requests.patch(url, json=payload, headers=headers).json()
-        return True if res else False
+        try:
+            print(res)
+        except UnboundLocalError:
+            raise Exception("정상작동하지 않았습니다.")
+        else:
+            return
 
     def delete(self, key, content) -> bool:
-        """
-        key의 값이 content인 요소를 삭제합니다.
-        """
         for result in self.readAll():
             # key를 잘못 입력한 경우 예외처리 해야함
             if result[key]["content"] == content:

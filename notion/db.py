@@ -1,37 +1,8 @@
 import requests
+from notion import database
 
 
 class Database:
-    class Field:
-        def __init__(self, *, pk=False, null=True) -> None:
-            self.pk = pk
-            self.null = null
-            self.type = None
-
-        def set_type(self, type):
-            self.type = type
-
-    class IntField(Field):
-        def __init__(self, *, pk=False, null=True) -> None:
-            super().__init__(pk=pk, null=null)
-
-        def set_type(self, type):
-            return super().set_type(type)
-
-    class CharField(Field):
-        def __init__(self, *, pk=False, null=True) -> None:
-            super().__init__(pk=pk, null=null)
-
-        def set_type(self, type):
-            return super().set_type(type)
-
-    class FloatField(Field):
-        def __init__(self, *, pk=False, null=True) -> None:
-            super().__init__(pk=pk, null=null)
-
-        def set_type(self, type):
-            return super().set_type(type)
-
     def __init__(self, url, api, **attributes) -> None:
         """
         url: 데이터베이스가 존재하는 http 주소입니다.
@@ -62,27 +33,42 @@ class Database:
         self.properties = response["properties"]
         self.api = api
         self.attributes = attributes
+        self.primaryKey: str = None
+        self.foreignDB: Database = None
 
+        # FIXME: multi_select타입인 경우도 넣어야함
         for key, field in attributes.items():
             if self.properties[key]["type"] == "title":
                 field.set_type("title")
+                if field.pk:
+                    if self.primaryKey:
+                        raise Exception("primaryKey가 중복되었습니다.")
+                    self.primaryKey = key
+                if field.foreign:
+                    self.foreignDB = field.foreign
             elif self.properties[key]["type"] == "rich_text":
                 field.set_type("rich_text")
+                if field.pk:
+                    if self.primaryKey:
+                        raise Exception("primaryKey가 중복되었습니다.")
+                    self.primaryKey = key
+                if field.foreign:
+                    self.foreignDB = field.foreign
             else:
                 raise Exception("유효하지 않는 타입입니다.")
 
     def checkType(self, field, content):
         match field.__class__:
-            case Database.IntField:
+            case database.IntField:
                 try:
                     int(content)
                 except ValueError:
                     raise Exception(f"{content}는 int타입이 아닙니다.")
                 else:
                     return
-            case Database.CharField:
+            case database.CharField:
                 return
-            case Database.FloatField:
+            case database.FloatField:
                 try:
                     float(content)
                 except ValueError:
@@ -110,6 +96,20 @@ class Database:
             }
 
     def insert(self, **contents):
+        if self.foreignDB:
+            url = f"https://api.notion.com/v1/databases/{self.foreignDB.id}/query"
+            payload = {"page_size": 100}
+            # TODO res가 error가 나온경우 예외처리 해야함
+            res = requests.post(url, json=payload, headers=self.headers21).json()
+
+            foreign = None
+
+            for result in res["results"]:
+                print(result["properties"][self.foreignDB.primaryKey]["title"][0]["plain_text"])
+                if result["properties"][self.foreignDB.primaryKey]["title"][0]["plain_text"] == str(contents[self.foreignDB.primaryKey]):
+                    foreign = True
+            if not foreign:
+                raise Exception("Foreign Error")
         url = "https://api.notion.com/v1/pages"
         properties = {}
         # attributeValue는 Field class입니다.
@@ -117,7 +117,8 @@ class Database:
             isTitle = True if attributeValue.type == "title" else False
             self.checkType(attributeValue, contents[attributeKey])
             properties[attributeKey] = self.getProperty(
-                isTitle, contents[attributeKey])
+                isTitle, contents[attributeKey]
+            )
 
         payload = {
             "parent": {
@@ -166,6 +167,7 @@ class Database:
         payload = {"page_size": 100}
         res = requests.post(url, json=payload, headers=self.headers21).json()
         arr = []
+        print(res["results"])
         for result in res["results"]:
             __dict = {}
             for propertyKey, propertyValue in result["properties"].items():

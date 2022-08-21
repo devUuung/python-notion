@@ -3,6 +3,20 @@
 Notion API 써드파티 라이브러리입니다. 이 프로젝트는 Notion의 데이터베이스 기능을 다른 관계형 데이터베이스처럼 사용할 수 있도록 구현하는 것이 목적입니다.
 
 ## 사용법
+
+### DB 연결방법
+```py
+from notion.database import Database
+
+db1 = Database(
+        "databaseUrl", 
+        "apiKey", 
+        a=Database.CharField(pk = True), 
+        b=Database.CharField(null = False), 
+        c=Database.CharField(null = False)
+    )
+```
+
 ### INSERT 코드 실행전
 |a|b|c|
 |-|-|-|

@@ -1,5 +1,6 @@
 import requests
 from notion import database
+from notion.response import Response
 
 
 class Database:
@@ -167,15 +168,9 @@ class Database:
     def read(self) -> tuple:
         url = f"https://api.notion.com/v1/databases/{self.id}/query"
         payload = {"page_size": 100}
-        res = requests.post(url, json=payload, headers=self.headers21).json()
-        arr = []
-        for result in res["results"]:
-            __dict = {}
-            for propertyKey, propertyValue in result["properties"].items():
-                __dict[propertyKey] = self.getValue(
-                    self.attributes[propertyKey].type, self.attributes[propertyKey].__class__, propertyValue)
-            arr.append(__dict)
-        return tuple(arr)
+        res = Response(url, payload, self.headers21)
+        return res.getProperties()
+
 
     def readAll(self):
         url = f"https://api.notion.com/v1/databases/{self.id}/query"

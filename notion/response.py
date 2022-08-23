@@ -14,17 +14,9 @@ class Property:
   def __call__(self) -> tuple:
     return (self.key, self.value)
 
-class Title:
-  def __init__(self) -> None:
-    pass
-
-class RichText:
-  def __init__(self) -> None:
-    pass
-
 class Response:
   def __init__(self, url, json, headers) -> None:
-    self.results: array = requests.post(
+    self.results = requests.post(
       url,
       json=json,
       headers=headers

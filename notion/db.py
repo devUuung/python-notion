@@ -137,6 +137,8 @@ class Database:
                 return int(content)
             case database.CharField:
                 return content
+            case database.FloatField:
+                return float(content)
 
     def getValue(self, type, contentType, property, all=False):
         match type:

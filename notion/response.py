@@ -1,7 +1,7 @@
 import requests
 
 class Property:
-  def __init__(self, key, value, id) -> None:
+  def __init__(self, key, value) -> None:
     self.key = key
     self.type = value["type"]
     self.id = id
@@ -13,14 +13,11 @@ class Property:
       case _:
         raise Exception("Property 에러")
 
-  def __call__(self) -> tuple:
-    return (
-      self.id,
-      {
-        self.key: self.value,
-        "type": self.type
-      }
-    )
+  def __call__(self) -> dict:
+    return {
+      "content": self.value,
+      "type": self.type
+    }
 
 class Response:
   def __init__(self, url, json, headers) -> None:
@@ -30,11 +27,24 @@ class Response:
       headers=headers
       ).json()["results"]
 
-  def getProperty(self):
+  def getResult(self):
     for result in self.results:
-      yield [Property(key, value, result["id"])() for key, value in result["properties"].items()]
+      yield result
+
+  def getID(self, result):
+    return result["id"]
+
+  def getProperty(self, result) -> dict:
+    dictionary = {}
+    for key, value in result["properties"].items():
+      dictionary[key] = (Property(key, value)())
+    return dictionary
 
   def getProperties(self) -> tuple:
-    return tuple([
-        property for property in self.getProperty()
-      ])
+    arr = []
+    for result in self.getResult():
+      arr.append({
+        "id": self.getID(result),
+        "property": self.getProperty(result)
+      })
+    return tuple(arr)

@@ -133,9 +133,9 @@ class Database:
 
     def convertContentType(self, contentType, content):
         match contentType:
-            case Database.IntField:
+            case database.IntField:
                 return int(content)
-            case Database.CharField:
+            case database.CharField:
                 return content
 
     def getValue(self, type, contentType, property, all=False):
@@ -167,7 +167,6 @@ class Database:
         payload = {"page_size": 100}
         res = requests.post(url, json=payload, headers=self.headers21).json()
         arr = []
-        print(res["results"])
         for result in res["results"]:
             __dict = {}
             for propertyKey, propertyValue in result["properties"].items():

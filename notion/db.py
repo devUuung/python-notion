@@ -171,25 +171,10 @@ class Database:
         res = Response(url, payload, self.headers21)
         return res.getProperties()
 
-
-    def readAll(self):
-        url = f"https://api.notion.com/v1/databases/{self.id}/query"
-        payload = {"page_size": 100}
-        res = requests.post(url, json=payload, headers=self.headers21).json()
-        arr = []
-        for result in res["results"]:
-            __dict = {}
-            __dict["id"] = result["id"]
-            for propertyKey, propertyValue in result["properties"].items():
-                __dict[propertyKey] = self.getValue(
-                    self.attributes[propertyKey].type, self.attributes[propertyKey].__class__, propertyValue, all=True)
-            arr.append(__dict)
-        return tuple(arr)
-
     def update(self, key, before_content, **after_content) -> bool:
 
-        for result in self.readAll():
-            if result[key]["content"] == before_content:
+        for result in self.read():
+            if result["property"][key]["content"] == before_content:
                 url = f"https://api.notion.com/v1/pages/{result['id']}"
                 properties = {}
 
@@ -213,9 +198,9 @@ class Database:
         return False
 
     def delete(self, key, content) -> bool:
-        for result in self.readAll():
+        for result in self.read():
             # key를 잘못 입력한 경우 예외처리 해야함
-            if result[key]["content"] == content:
+            if result["property"][key]["content"] == content:
                 url = f"https://api.notion.com/v1/pages/{result['id']}"
                 payload = {"archived": True}
                 if requests.patch(url, json=payload, headers=self.headers22).json():

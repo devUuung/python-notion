@@ -132,39 +132,6 @@ class Database:
             return True
         return False
 
-    def convertContentType(self, contentType, content):
-        match contentType:
-            case database.IntField:
-                return int(content)
-            case database.CharField:
-                return content
-            case database.FloatField:
-                return float(content)
-
-    def getValue(self, type, contentType, property, all=False):
-        match type:
-            case "title":
-                if property["title"]:
-                    if all:
-                        return {
-                            "content": self.convertContentType(
-                                contentType, property["title"][0]["plain_text"]),
-                            "type": "title"
-                        }
-                    return self.convertContentType(contentType, property["title"][0]["plain_text"])
-                else:
-                    return None
-            case "rich_text":
-                if property["rich_text"]:
-                    if all:
-                        return {
-                            "content": self.convertContentType(contentType, property["rich_text"][0]["plain_text"]),
-                            "type": "rich_text"
-                        }
-                    return self.convertContentType(contentType, property["rich_text"][0]["plain_text"])
-                else:
-                    return None
-
 
     def read(self) -> tuple:
         url = f"https://api.notion.com/v1/databases/{self.id}/query"

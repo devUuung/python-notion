@@ -165,13 +165,14 @@ class Database:
                 else:
                     return None
 
+
     def read(self) -> tuple:
         url = f"https://api.notion.com/v1/databases/{self.id}/query"
         payload = {"page_size": 100}
         res = Response(url, payload, self.headers21)
         return res.getProperties()
 
-    # IntField인데 int로 값을 넣으면 str로 api전송을 하지않는 문제가 발생
+
     def update(self, key, before_content, **after_content) -> bool:
 
         for result in self.read():
@@ -207,6 +208,10 @@ class Database:
             if result["property"][key]["content"] == content:
                 url = f"https://api.notion.com/v1/pages/{result['id']}"
                 payload = {"archived": True}
-                if requests.patch(url, json=payload, headers=self.headers22).json():
+                response = requests.patch(url, json=payload, headers=self.headers22).json():
+                if response["object"] == "error":
+                    raise Exception(response["message"])
+                else:
                     return True
-        return False
+            else:
+                raise Exception(f"{key} = {content}의 요소를 찾지 못했습니다.")

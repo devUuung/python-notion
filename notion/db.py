@@ -182,10 +182,10 @@ class Database:
                 for contentKey, contentValue in after_content.items():
                     if result["property"][contentKey]["type"] == "title":
                         properties[contentKey] = {
-                            "title": [{"text": {"content": contentValue}}]}
+                            "title": [{"text": {"content": str(contentValue)}}]}
                     elif result["property"][contentKey]["type"] == "rich_text":
                         properties[contentKey] = {
-                            "rich_text": [{"text": {"content": contentValue}}]}
+                            "rich_text": [{"text": {"content": str(contentValue)}}]}
                 payload = {
                     "parent": {
                         "type": "database_id",
@@ -193,11 +193,13 @@ class Database:
                     },
                     "properties": properties
                 }
-                print(payload)
-                print(requests.patch(url, json=payload, headers=self.headers22).json())
-                return True
-
-        return False
+                response = requests.patch(url, json=payload, headers=self.headers22).json()
+                if response["object"] == "error":
+                    raise Exception(response["message"])
+                else:
+                    return True
+            else:
+                raise Exception(f"{key} = {before_content}의 요소를 찾지 못했습니다.")
 
     def delete(self, key, content) -> bool:
         for result in self.read():

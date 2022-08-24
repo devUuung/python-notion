@@ -171,6 +171,7 @@ class Database:
         res = Response(url, payload, self.headers21)
         return res.getProperties()
 
+    # IntField인데 int로 값을 넣으면 str로 api전송을 하지않는 문제가 발생
     def update(self, key, before_content, **after_content) -> bool:
 
         for result in self.read():
@@ -178,6 +179,13 @@ class Database:
                 url = f"https://api.notion.com/v1/pages/{result['id']}"
                 properties = {}
 
+                for contentKey, contentValue in after_content.items():
+                    if result["property"][contentKey]["type"] == "title":
+                        properties[contentKey] = {
+                            "title": [{"text": {"content": contentValue}}]}
+                    elif result["property"][contentKey]["type"] == "rich_text":
+                        properties[contentKey] = {
+                            "rich_text": [{"text": {"content": contentValue}}]}
                 payload = {
                     "parent": {
                         "type": "database_id",
@@ -185,15 +193,9 @@ class Database:
                     },
                     "properties": properties
                 }
-                for contentKey, contentValue in after_content.items():
-                    if result[contentKey]["type"] == "title":
-                        properties[contentKey] = {
-                            "title": [{"text": {"content": contentValue}}]}
-                    elif result[contentKey]["type"] == "rich_text":
-                        properties[contentKey] = {
-                            "rich_text": [{"text": {"content": contentValue}}]}
-                if requests.patch(url, json=payload, headers=self.headers22).json():
-                    return True
+                print(payload)
+                print(requests.patch(url, json=payload, headers=self.headers22).json())
+                return True
 
         return False
 

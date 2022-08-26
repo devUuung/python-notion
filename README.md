@@ -9,10 +9,29 @@ Notion API 써드파티 라이브러리입니다. 이 프로젝트는 Notion의 
 from notion.database import Database
 
 db1 = Database(
-        "databaseUrl", 
-        "apiKey", 
-        a=Database.CharField(pk = True), 
-        b=Database.CharField(null = False), 
+        "databaseUrl",
+        "apiKey",
+        a=Database.CharField(pk = True),
+        b=Database.CharField(null = False),
+        c=Database.CharField(null = False)
+    )
+```
+
+### 외래키 연결법
+```py
+db1 = Database(
+        "databaseUrl",
+        "apiKey",
+        a=Database.CharField(pk = True),
+        b=Database.CharField(null = False),
+        c=Database.CharField(null = False)
+    )
+
+db2 = Database(
+        "databaseUrl",
+        "apiKey",
+        a=Database.CharField(pk = True, foreign=db2),
+        b=Database.CharField(null = False),
         c=Database.CharField(null = False)
     )
 ```
@@ -24,10 +43,10 @@ db1 = Database(
 from notion.database import Database
 
 db1 = Database(
-        "databaseUrl", 
-        "apiKey", 
-        a=Database.CharField(), 
-        b=Database.CharField(), 
+        "databaseUrl",
+        "apiKey",
+        a=Database.CharField(),
+        b=Database.CharField(),
         c=Database.CharField()
     )
 
@@ -48,10 +67,10 @@ if db1.insert(a="hello", b="World", c="!"):
 from notion.database import Database
 
 db1 = Database(
-        "databaseUrl", 
-        "apiKey", 
-        a=Database.CharField(), 
-        b=Database.CharField(), 
+        "databaseUrl",
+        "apiKey",
+        a=Database.CharField(),
+        b=Database.CharField(),
         c=Database.CharField()
     )
 
@@ -70,10 +89,10 @@ if db1.update("a", "hello", a="Bye", b="world", c="?"):
 from notion.database import Database
 
 db1 = Database(
-        "databaseUrl", 
-        "apiKey", 
-        a=Database.CharField(), 
-        b=Database.CharField(), 
+        "databaseUrl",
+        "apiKey",
+        a=Database.CharField(),
+        b=Database.CharField(),
         c=Database.CharField()
     )
 

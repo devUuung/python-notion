@@ -55,6 +55,8 @@ db2 = Database(
 foreign 매개변수를 활용해서 외래 db를 연결할 수 있습니다.
 db2.insert를 할때, a의 값이 db1에 a에도 존재하는지 확인하는 절차를 거칩니다. 
 
+## INSERT
+
 ### INSERT 코드 실행전
 |a|b|c|
 |-|-|-|
@@ -76,6 +78,8 @@ if db1.insert(a="hello", b="World", c="!"):
 |a|b|c|
 |-|-|-|
 |hello|World|!|
+
+## UPDATE
 
 ### UPDATE 코드 실행전
 |a|b|c|
@@ -102,7 +106,12 @@ if db1.update("a", "hello", a="Bye", b="world", c="?"):
 |-|-|-|
 |Bye|world|?|
 
+## DELETE
+
 ### DELETE 코드 실행전
+|a|b|c|
+|-|-|-|
+|Bye|world|?|
 
 ```py
 from notion.database import Database

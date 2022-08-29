@@ -46,7 +46,7 @@ db1 = Database(
 db2 = Database(
         "databaseUrl",
         "apiKey",
-        a=Database.CharField(pk = True, foreign=db2),
+        a=Database.CharField(pk = True, foreign=db1),
         b=Database.CharField(null = False),
         c=Database.CharField(null = False)
     )

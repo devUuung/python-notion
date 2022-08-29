@@ -17,6 +17,22 @@ db1 = Database(
     )
 ```
 
+### 매개변수 정리
+1. pk
+
+primary-key인지 명시합니다.
+(기본값 False)
+
+2. null
+
+값이 비워져있어도 되는지 명시합니다.
+(기본값 True)
+
+3. foreign
+
+외래 db가 있는지 명시합니다.
+(기본값 None)
+
 ### 외래키 연결법
 ```py
 db1 = Database(
@@ -35,6 +51,9 @@ db2 = Database(
         c=Database.CharField(null = False)
     )
 ```
+
+foreign 매개변수를 활용해서 외래 db를 연결할 수 있습니다.
+db2.insert를 할때, a의 값이 db1에 a에도 존재하는지 확인하는 절차를 거칩니다. 
 
 ### INSERT 코드 실행전
 |a|b|c|

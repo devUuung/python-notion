@@ -28,7 +28,7 @@ class Database:
             url.split("/")[-1].split("?")[0],
             headers=self.headers22
         ).json()
-
+        # attributes와 properties를 구분할 방안이 필요함.
         self.id = response["id"]
         self.title = response["title"]
         self.properties = response["properties"]
@@ -106,7 +106,6 @@ class Database:
             foreign = None
 
             for result in res["results"]:
-                print(result["properties"][self.foreignDB.primaryKey]["title"][0]["plain_text"])
                 if result["properties"][self.foreignDB.primaryKey]["title"][0]["plain_text"] == str(contents[self.foreignDB.primaryKey]):
                     foreign = True
             if not foreign:

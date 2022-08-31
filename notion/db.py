@@ -175,7 +175,7 @@ class Database:
             if result["property"][key]["content"] == content:
                 url = f"https://api.notion.com/v1/pages/{result['id']}"
                 payload = {"archived": True}
-                response = requests.patch(url, json=payload, headers=self.headers22).json():
+                response = requests.patch(url, json=payload, headers=self.headers22).json()
                 if response["object"] == "error":
                     raise Exception(response["message"])
                 else:

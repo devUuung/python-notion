@@ -121,15 +121,7 @@ class Database:
             if not foreign:
                 raise Exception("Foreign Error")
         url = self.getURL(type="insert")
-        properties = {}
-        # attributeValue는 Field class입니다.
-        for attributeKey, attributeValue in self.attributes.items():
-            isTitle = True if attributeValue.type == "title" else False
-            self.checkType(attributeValue, contents[attributeKey])
-            properties[attributeKey] = self.getProperty(
-                isTitle, contents[attributeKey]
-            )
-
+        properties = self.make_properties(self.attributes, contents)
         payload = {
             "parent": {
                 "type": "database_id",
@@ -148,19 +140,21 @@ class Database:
         res = Response(url, payload, self.headers21)
         return res.getProperties()
 
+    def make_properties(self, attribute, content):
+        properties = {}
+        for key, value in content.items():
+            if attribute[key].type == "title":
+                properties[key] = self.getProperty(True, value)
+            elif attribute[key].type == "rich_text":
+                properties[key] = self.getProperty(False, value)
+        return properties
 
     def update(self, key, before_content, **after_content) -> bool:
 
         for result in self.read():
             if result["property"][key]["content"] == str(before_content):
                 url = self.getURL(type="update", id=result['id'])
-                properties = {}
-
-                for contentKey, contentValue in after_content.items():
-                    if result["property"][contentKey]["type"] == "title":
-                        properties[contentKey] = self.getProperty(True, contentValue)
-                    elif result["property"][contentKey]["type"] == "rich_text":
-                        properties[contentKey] = self.getProperty(False, contentValue)
+                properties = self.make_properties(self.attributes, after_content)
                 payload = {
                     "parent": {
                         "type": "database_id",

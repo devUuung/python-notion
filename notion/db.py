@@ -95,10 +95,20 @@ class Database:
                     }
                 }]
             }
+    
+    def getURL(self, type, id=None):
+        if type == "read":
+            return f"https://api.notion.com/v1/databases/{id}/query"
+        elif type == "insert":
+            return "https://api.notion.com/v1/pages"
+        elif type == "update":
+            return f"https://api.notion.com/v1/pages/{id}"
+        elif type == "delete":
+            return f"https://api.notion.com/v1/pages/{id}"
 
     def insert(self, **contents):
         if self.foreignDB:
-            url = f"https://api.notion.com/v1/databases/{self.foreignDB.id}/query"
+            url = self.getURL(type="read", id=self.foreignDB.id)
             payload = {"page_size": 100}
             # TODO res가 error가 나온경우 예외처리 해야함
             res = requests.post(url, json=payload, headers=self.headers21).json()
@@ -110,7 +120,7 @@ class Database:
                     foreign = True
             if not foreign:
                 raise Exception("Foreign Error")
-        url = "https://api.notion.com/v1/pages"
+        url = self.getURL(type="insert")
         properties = {}
         # attributeValue는 Field class입니다.
         for attributeKey, attributeValue in self.attributes.items():
@@ -133,7 +143,7 @@ class Database:
 
 
     def read(self) -> tuple:
-        url = f"https://api.notion.com/v1/databases/{self.id}/query"
+        url = self.getURL(type="read", id=self.id)
         payload = {"page_size": 100}
         res = Response(url, payload, self.headers21)
         return res.getProperties()
@@ -143,7 +153,7 @@ class Database:
 
         for result in self.read():
             if result["property"][key]["content"] == before_content:
-                url = f"https://api.notion.com/v1/pages/{result['id']}"
+                url = self.getURL(type="update", id=result['id'])
                 properties = {}
 
                 for contentKey, contentValue in after_content.items():
@@ -172,7 +182,7 @@ class Database:
         for result in self.read():
             # key를 잘못 입력한 경우 예외처리 해야함
             if result["property"][key]["content"] == content:
-                url = f"https://api.notion.com/v1/pages/{result['id']}"
+                url = self.getURL(type="delete", id=result['id'])
                 payload = {"archived": True}
                 response = requests.patch(url, json=payload, headers=self.headers22).json()
                 if response["object"] == "error":

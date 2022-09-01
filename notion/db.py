@@ -118,6 +118,7 @@ class Database:
             for result in res["results"]:
                 if result["properties"][self.foreignDB.primaryKey]["title"][0]["plain_text"] == str(contents[self.foreignDB.primaryKey]):
                     foreign = True
+                    break
             if not foreign:
                 raise Exception("Foreign Error")
         url = self.getURL(type="insert")

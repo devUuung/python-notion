@@ -152,17 +152,15 @@ class Database:
     def update(self, key, before_content, **after_content) -> bool:
 
         for result in self.read():
-            if result["property"][key]["content"] == before_content:
+            if result["property"][key]["content"] == str(before_content):
                 url = self.getURL(type="update", id=result['id'])
                 properties = {}
 
                 for contentKey, contentValue in after_content.items():
                     if result["property"][contentKey]["type"] == "title":
-                        properties[contentKey] = {
-                            "title": [{"text": {"content": str(contentValue)}}]}
+                        properties[contentKey] = self.getProperty(True, contentValue)
                     elif result["property"][contentKey]["type"] == "rich_text":
-                        properties[contentKey] = {
-                            "rich_text": [{"text": {"content": str(contentValue)}}]}
+                        properties[contentKey] = self.getProperty(False, contentValue)
                 payload = {
                     "parent": {
                         "type": "database_id",

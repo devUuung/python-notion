@@ -28,7 +28,7 @@ class Database:
             url.split("/")[-1].split("?")[0],
             headers=self.headers22
         ).json()
-        # attributes와 properties를 구분할 방안이 필요함.
+        # properties는 attributes를 만들때만 사용하는 변수임.
         self.id = response["id"]
         self.title = response["title"]
         self.properties = response["properties"]
@@ -110,11 +110,11 @@ class Database:
         if self.foreignDB:
             url = self.getURL(type="read", id=self.foreignDB.id)
             payload = {"page_size": 100}
-            # TODO res가 error가 나온경우 예외처리 해야함
             res = requests.post(url, json=payload, headers=self.headers21).json()
 
             foreign = None
 
+            # TODO 함수로 따로 빼내는 것이 가독성이 좋아보임.
             for result in res["results"]:
                 if result["properties"][self.foreignDB.primaryKey]["title"][0]["plain_text"] == str(contents[self.foreignDB.primaryKey]):
                     foreign = True
@@ -173,7 +173,6 @@ class Database:
 
     def delete(self, key, content) -> bool:
         for result in self.read():
-            # key를 잘못 입력한 경우 예외처리 해야함
             if result["property"][key]["content"] == content:
                 url = self.getURL(type="delete", id=result['id'])
                 payload = {"archived": True}
